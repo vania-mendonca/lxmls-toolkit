@@ -29,7 +29,7 @@ class MultinomialNaiveBayes(lc.LinearClassifier):
         prior = np.zeros(n_classes)
         likelihood = np.zeros((n_words, n_classes))
 
-        # TODO: This is where you have to write your code!
+        # This is where you have to write your code!
         # You need to compute the values of the prior and likelihood parameters
         # and place them in the variables called "prior" and "likelihood".
         # Examples:
@@ -39,8 +39,38 @@ class MultinomialNaiveBayes(lc.LinearClassifier):
         # (*) recall that Python starts indices at 0, so an index of 4
         # corresponds to the fifth feature!
 
-        # Complete Exercise 1.1 
-        raise NotImplementedError("Complete Exercise 1.1")
+        # Complete Exercise 1.1
+
+        J = []
+
+        num = np.zeros((n_words, n_classes))
+        den = np.zeros(n_classes)
+
+        for k in xrange(n_classes):
+
+            J.append(list())
+            for d in xrange(n_docs):
+                if y[d] == classes[k]:
+                    J[k].append(x[d, :])
+
+            prior[k] = len(J[k]) / float(n_docs)
+
+            for j in xrange(n_words):
+                for m in J[k]:
+                    num[j, k] += m[j]
+
+                den[k] += num[j, k]
+
+            for j in xrange(n_words):
+
+                # With Add-one smoothing: train: 0.974375 test: 0.840000
+                likelihood[j, k] = (num[j, k] + 1) / (den[k] + n_words)
+
+                # Without smoothing: train: 0.987500 test: 0.635000
+                # likelihood[j, k] = (num[j, k]) / (den[k])
+
+        # print prior
+        # print likelihood
 
         params = np.zeros((n_words+1, n_classes))
         for i in xrange(n_classes):
