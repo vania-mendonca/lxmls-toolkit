@@ -2,4 +2,7 @@
 /LXMLS_Toolkit.egg-info/
 /build/
 /dist/
+
+## Vania
 .idea/
+.ipynb_checkpoints/
