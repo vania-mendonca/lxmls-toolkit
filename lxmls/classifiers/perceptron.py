@@ -47,6 +47,9 @@ class Perceptron(lc.LinearClassifier):
             acc = self.evaluate(y, y_pred)
             self.trained = False
             print "Rounds: %i Accuracy: %f" % (epoch_nr, acc)
+            if epoch_nr % 5 == 0:
+                print w
+
         self.trained = True
 
         if self.averaged:
