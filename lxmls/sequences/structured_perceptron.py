@@ -10,7 +10,9 @@ class StructuredPerceptron(dsc.DiscriminativeSequenceClassifier):
 
     def __init__(self, observation_labels, state_labels, feature_mapper,
                  num_epochs=10, learning_rate=1.0, averaged=True):
-        dsc.DiscriminativeSequenceClassifier.__init__(self, observation_labels, state_labels, feature_mapper)
+        dsc.DiscriminativeSequenceClassifier.__init__(self, observation_labels,
+                                                      state_labels,
+                                                      feature_mapper)
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
         self.averaged = averaged
@@ -41,8 +43,81 @@ class StructuredPerceptron(dsc.DiscriminativeSequenceClassifier):
 
     def perceptron_update(self, sequence):
 
-        # Complete Exercise 3.3 
-        raise NotImplementedError("Complete Exercise 3.3")
+        # num_labels = len(sequence.y)
+        num_labels = 0
+        num_mistakes = 0
+
+        # Predicted sequence
+
+        prediction, _ = self.viterbi_decode(sequence)
+        y_hat = prediction.y
+
+        # Update INITIAL features ##############################################
+
+        y_t_true = sequence.y[0]
+        y_t_hat = y_hat[0]
+
+        if y_t_hat != y_t_true:
+            # num_mistakes += 1
+
+            true_initial_features = self.feature_mapper.get_initial_features(sequence, y_t_true)
+            hat_initial_features = self.feature_mapper.get_initial_features(sequence, y_t_hat)
+            self.parameters[true_initial_features] += self.learning_rate
+            self.parameters[hat_initial_features] -= self.learning_rate
+
+        # Update EMISSION and TRANSMISSION features ############################
+
+        for pos in xrange(len(sequence.x)):
+
+            # Update emission features.
+            y_t_true = sequence.y[pos]
+            y_t_hat = y_hat[pos]
+
+            num_labels += 1
+
+            if y_t_hat != y_t_true:
+                num_mistakes += 1
+
+                true_emission_features = self.feature_mapper.get_emission_features(sequence, pos, y_t_true)
+                hat_emission_features = self.feature_mapper.get_emission_features(sequence, pos, y_t_hat)
+
+                self.parameters[true_emission_features] += self.learning_rate
+                self.parameters[hat_emission_features] -= self.learning_rate
+
+            if pos > 0:
+                # Update transition features.
+                prev_y_t_true = sequence.y[pos - 1]
+                prev_y_t_hat = y_hat[pos - 1]
+
+                true_transition_features = self.feature_mapper.get_transition_features(
+                    sequence, pos - 1, y_t_true, prev_y_t_true)
+                hat_transition_features = self.feature_mapper.get_transition_features(
+                    sequence, pos - 1, y_t_hat, prev_y_t_hat)
+
+                if y_t_hat != y_t_true:
+                    # num_mistakes += 1
+                    self.parameters[true_transition_features] += self.learning_rate
+                    self.parameters[hat_transition_features] -= self.learning_rate
+
+
+        # Update FINAL features ################################################
+
+        pos = len(sequence.x)
+        y_t_true = sequence.y[pos - 1]
+        y_t_hat = y_hat[pos - 1]
+
+        if y_t_hat != y_t_true:
+            true_final_features = self.feature_mapper.get_final_features(
+                sequence, y_t_true)
+            hat_final_features = self.feature_mapper.get_final_features(
+                sequence, y_t_hat)
+
+            # num_mistakes += 1
+            self.parameters[true_final_features] += self.learning_rate
+            self.parameters[hat_final_features] -= self.learning_rate
+
+        return num_labels, num_mistakes
+
 
     def save_model(self, dir):
         fn = open(dir + "parameters.txt", 'w')
