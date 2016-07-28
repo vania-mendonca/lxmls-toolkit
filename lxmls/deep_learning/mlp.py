@@ -98,12 +98,15 @@ class NumpyMLP:
 
     def grads(self, x, y):
         """
-       Computes the gradients of the network with respect to cross entropy
-       error cost
-       """
+        Computes the gradients of the network with respect to cross entropy
+        error cost
+        """
 
         # Run forward and store activations for each layer
         activations = self.forward(x, all_outputs=True)
+
+        # Number of examples
+        M = len(x)
 
         # For each layer in reverse store the gradients for each parameter
         nabla_params = [None] * (2*self.n_layers)
@@ -114,16 +117,51 @@ class NumpyMLP:
             # Note that sometimes we need the weight from the next layer
             W = self.params[2*n]
             b = self.params[2*n+1]
+
+            # Complete Exercise 5.2
+
+            activations_n = activations[n]
+            activations_n_prev = activations[n - 1]  # layer n - 1
+
+            # Errors
+            dim1, dim2 = np.shape(activations[n])
+
+            # non_linear_error = np.zeros([M, self.n_layers])
+            non_linear_error = np.zeros([dim1, M])
+
+            linear_error = np.zeros(M)
+            prod_nle_activation = 0
+            sum_nle = np.zeros(dim1)
+
+            # print np.shape(x)
+            print np.shape(y)
+            print np.shape(activations[n])
+            print activations_n
+
             if n != self.n_layers-1:
                 W_next = self.params[2*(n+1)]
 
-           # Complete Exercise 5.2 
-           raise NotImplementedError("Complete Exercise 5.2")
+                for m in xrange(M):
+                    linear_error[m] = np.dot(W_next.T, non_linear_error[m]) # non_linear_error from n + 1
+                    non_linear_error[:, m] = linear_error[m] * activations_n[:, m] * (np.ones_like(activations_n[:, m]) - activations_n[:, m])
 
-           # Store the gradients 
-           nabla_params[2*n]   = nabla_W
-           nabla_params[2*n+1] = nabla_b
+                    prod_nle_activation += np.dot(non_linear_error[:, m], np.transpose(activations_n_prev[:, m]))
+                    sum_nle += non_linear_error[:, m]
 
+            else:
+                for m in xrange(M):
+                    non_linear_error[:, m] = y[m] - activations_n[:, m]
+
+                    prod_nle_activation += np.dot(non_linear_error[:, m], np.transpose(activations_n_prev[:, m]))
+                    sum_nle += non_linear_error[:, m]
+
+            nabla_W = -(1/M) * prod_nle_activation
+            nabla_b = -(1/M) * sum_nle # np.sum(non_linear_error)
+
+            # raise NotImplementedError("Complete Exercise 5.2")
+            # Store the gradients
+            nabla_params[2*n] = nabla_W
+            nabla_params[2*n+1] = nabla_b
         return nabla_params
 
     def init_weights(self, rng, geometry, actvfunc):
