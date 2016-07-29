@@ -150,7 +150,7 @@ class NumpyMLP:
 
             else:
                 for m in xrange(M):
-                    non_linear_error[:, m] = y[m] - activations_n[:, m]
+                    non_linear_error[:, m] = index2onehot(y[m], W.shape[0]) - activations_n[:, m]
 
                     prod_nle_activation += np.dot(non_linear_error[:, m], np.transpose(activations_n_prev[:, m]))
                     sum_nle += non_linear_error[:, m]
@@ -331,11 +331,36 @@ class TheanoMLP(NumpyMLP):
         if all_outputs:
             activations = [x]
 
-            # Input
+        # Input
         tilde_z = x
 
-        # Complete Exercise 5.3 
-        raise NotImplementedError("Complete Exercise 5.3")
+        # TODO Complete Exercise 5.3
+        # raise NotImplementedError("Complete Exercise 5.3")
+
+        # #########################################################
+
+        for n in range(self.n_layers):
+
+            # Get weigths and bias of the layer (even and odd positions)
+            _W = self.params[2 * n]
+            _b = self.params[2 * n + 1]
+
+            # Linear transformation
+            _z = T.dot(_W, tilde_z) + _b
+
+            # Non-linear transformation
+            if self.actvfunc[n] == "sigmoid":
+                tilde_z = T.nnet.sigmoid(_z)
+
+            elif self.actvfunc[n] == "softmax":
+                # Softmax is computed in log-domain to prevent
+                # underflow/overflow
+                tilde_z = T.nnet.softmax(_z.T).T
+
+            if all_outputs:
+                activations.append(tilde_z)
+
+        # #########################################################
 
         if all_outputs:
             tilde_z = activations
